@@ -1,1 +1,5 @@
-extracted/
+# 原始小米动态照片（可选，如果文件很大可以不传）
+images/
+
+# Node 依赖
+node_modules/

@@ -393,17 +393,11 @@
     function makeDraggable(card) {
         let isDragging = false;
         let startX, startY, origLeft, origTop;
-        const container = card.querySelector('.photo-container');
-        const video = container?.querySelector('video');
+        let dragMoved = false;
 
         function onPointerDown(e) {
-            if (container && video) {
-                clearTimeout(container._playTimer);
-                container.classList.remove('playing');
-                video.pause();
-            }
-
             isDragging = true;
+            dragMoved = false;
             const point = e.touches ? e.touches[0] : e;
             startX = point.clientX;
             startY = point.clientY;
@@ -411,7 +405,6 @@
             origTop = parseFloat(card.style.top) || 0;
 
             card.classList.add('dragging');
-            e.preventDefault();
         }
 
         function onPointerMove(e) {
@@ -420,9 +413,12 @@
             const dx = point.clientX - startX;
             const dy = point.clientY - startY;
 
+            if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+                dragMoved = true;
+            }
+
             card.style.left = (origLeft + dx) + 'px';
             card.style.top = (origTop + dy) + 'px';
-            e.preventDefault();
         }
 
         function onPointerUp() {
@@ -435,8 +431,8 @@
         document.addEventListener('mousemove', onPointerMove);
         document.addEventListener('mouseup', onPointerUp);
 
-        card.addEventListener('touchstart', onPointerDown, { passive: false });
-        document.addEventListener('touchmove', onPointerMove, { passive: false });
+        card.addEventListener('touchstart', onPointerDown, { passive: true });
+        document.addEventListener('touchmove', onPointerMove, { passive: true });
         document.addEventListener('touchend', onPointerUp);
     }
 
