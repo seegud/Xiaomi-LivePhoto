@@ -1,8 +1,8 @@
-# Live Photo Viewer / 动态照片查看器
+# Xiaomi LivePhoto Splitter & Web Viewer / 小米实况图片拆分脚本与网页支持示例
 
-Extract and display Xiaomi Motion Photos (Live Photos) in the browser — a lightweight, no-dependency tool that splits combined JPEG+MP4 files and presents them with a hover-to-play experience.
+A Node.js script to extract JPEG and MP4 from Xiaomi Motion Photos, plus a web demo showing how to display them with hover-to-play interaction.
 
-将小米动态照片（Live Photos）在浏览器中提取并展示——一个轻量、零依赖的工具，将 JPEG+MP4 混合文件拆分，并以悬停播放的形式呈现。
+Node.js 脚本将小米实况图片（动态照片）拆分为 JPEG 封面图和 MP4 视频，附带网页示例展示如何实现悬停播放交互。
 
 ---
 
