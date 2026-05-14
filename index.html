@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>小米实况图片拆分脚本与网页支持示例</title>
 <style>
     :root {
@@ -19,6 +19,7 @@
         margin: 0;
         padding: 0;
         box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
     }
 
     body {
@@ -41,7 +42,6 @@
         overflow: hidden;
     }
 
-    /* 标题居中 */
     .hero-header {
         position: relative;
         z-index: 5;
@@ -102,14 +102,8 @@
     .motion-card:nth-child(n+6) { animation-delay: 0.55s; }
 
     @keyframes fadeSlideIn {
-        0% {
-            opacity: 0;
-            transform: translate(-50%, -50%) rotate(var(--rot)) scale(0.6);
-        }
-        100% {
-            opacity: 1;
-            transform: translate(-50%, -50%) rotate(var(--rot)) scale(1);
-        }
+        0% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--rot)) scale(0.6); }
+        100% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--rot)) scale(1); }
     }
 
     .motion-card:hover {
@@ -125,10 +119,6 @@
         z-index: 100 !important;
         box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
         border-color: #888;
-    }
-
-    .motion-card.dragging:hover {
-        transform: translate(-50%, -50%) rotate(var(--rot)) scale(1.1) !important;
     }
 
     /* ========== 图片容器 ========== */
@@ -156,61 +146,57 @@
         height: 100%;
         object-fit: cover;
         opacity: 0;
-        transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: opacity 0.3s ease;
     }
 
-    .photo-container img {
-        transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .photo-container.playing img {
-        opacity: 0;
-    }
-
-    .photo-container.playing video {
-        opacity: 1;
-    }
+    .photo-container.playing img { opacity: 0; }
+    .photo-container.playing video { opacity: 1; }
 
     /* ========== LIVE 指示器 ========== */
     .indicator {
         position: absolute;
         top: 10px;
         right: 10px;
-        z-index: 3;
+        z-index: 10;
         display: flex;
         align-items: center;
         gap: 5px;
-        padding: 4px 10px;
-        background: rgba(0, 0, 0, 0.55);
+        padding: 6px 12px;
+        background: rgba(0, 0, 0, 0.6);
         backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
         border-radius: 20px;
-        font-size: 0.6rem;
+        font-size: 0.7rem;
         letter-spacing: 0.08em;
         color: #fff;
-        pointer-events: none;
-        transition: opacity 0.3s ease;
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        pointer-events: auto;
+        cursor: pointer;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .indicator:active {
+        transform: scale(0.95);
+        background: rgba(0, 0, 0, 0.8);
     }
 
     .indicator .dot {
-        width: 5px;
-        height: 5px;
+        width: 6px;
+        height: 6px;
         border-radius: 50%;
-        background: #fff;
+        background: #ff3b30;
         animation: livePulse 1.6s ease-in-out infinite;
     }
 
-    .photo-container.playing .indicator {
-        opacity: 0;
+    .indicator.playing .dot {
+        background: #34c759;
     }
 
     @keyframes livePulse {
-        0%, 100% { opacity: 0.3; transform: scale(1); }
-        50% { opacity: 1; transform: scale(1.3); }
+        0%, 100% { opacity: 0.4; transform: scale(1); }
+        50% { opacity: 1; transform: scale(1.2); }
     }
 
-    /* ========== 卡片底部叠加 ========== */
+    /* ========== 卡片底部 ========== */
     .card-info {
         position: absolute;
         bottom: 0;
@@ -233,13 +219,128 @@
     .card-info .label {
         font-size: 0.7rem;
         color: rgba(255, 255, 255, 0.9);
-        letter-spacing: 0.04em;
     }
 
-    .card-info .hint {
-        font-size: 0.6rem;
-        color: rgba(255, 255, 255, 0.4);
-        margin-top: 2px;
+    /* ========== 移动端全屏查看 ========== */
+    .lightbox {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        background: rgba(0, 0, 0, 0.95);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .lightbox.active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .lightbox-content {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .lightbox-media {
+        position: relative;
+        max-width: 100%;
+        max-height: 80vh;
+        border-radius: var(--radius);
+        overflow: hidden;
+    }
+
+    .lightbox-media img,
+    .lightbox-media video {
+        display: block;
+        max-width: 100%;
+        max-height: 80vh;
+        width: auto;
+        height: auto;
+    }
+
+    .lightbox-media video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .lightbox-media.playing img { opacity: 0; }
+    .lightbox-media.playing video { opacity: 1; }
+
+    .lightbox-indicator {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(12px);
+        border-radius: 24px;
+        font-size: 0.8rem;
+        color: #fff;
+        cursor: pointer;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .lightbox-indicator .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #ff3b30;
+        animation: livePulse 1.6s ease-in-out infinite;
+    }
+
+    .lightbox-indicator.playing .dot {
+        background: #34c759;
+    }
+
+    .lightbox-close {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 10;
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        cursor: pointer;
+        border: none;
+        color: #fff;
+        font-size: 1.5rem;
+    }
+
+    .lightbox-hint {
+        position: absolute;
+        bottom: 40px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 10;
+        padding: 10px 20px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        font-size: 0.75rem;
+        color: rgba(255, 255, 255, 0.7);
+        text-align: center;
     }
 
     /* ========== 底部说明 ========== */
@@ -291,10 +392,11 @@
             max-height: none;
             transform: none !important;
             animation: fadeIn 0.6s ease forwards;
+            cursor: pointer;
         }
 
-        .motion-card:hover {
-            transform: scale(1.03) !important;
+        .motion-card:active {
+            transform: scale(0.98) !important;
         }
 
         .photo-container img {
@@ -307,6 +409,14 @@
         .card-info {
             opacity: 1;
             transform: none;
+            padding: 12px 10px 8px;
+        }
+
+        .indicator {
+            top: 8px;
+            right: 8px;
+            padding: 5px 10px;
+            font-size: 0.65rem;
         }
 
         @keyframes fadeIn {
@@ -331,29 +441,42 @@
     Extracted from Xiaomi Motion Photo
 </p>
 
+<!-- 移动端全屏查看 -->
+<div class="lightbox" id="lightbox">
+    <button class="lightbox-close" id="lightboxClose">&times;</button>
+    <div class="lightbox-content">
+        <div class="lightbox-media" id="lightboxMedia">
+            <img src="" alt="" id="lightboxImg">
+            <video src="" loop playsinline id="lightboxVideo"></video>
+            <div class="lightbox-indicator" id="lightboxIndicator">
+                <span class="dot"></span>
+                LIVE
+            </div>
+        </div>
+    </div>
+    <div class="lightbox-hint">长按播放实况图 · 点击 LIVE 播放</div>
+</div>
+
 <script>
+    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+    let currentLightboxVideo = null;
+
     function createMotionCard(photo) {
         const card = document.createElement('div');
         card.className = 'motion-card';
+        card.dataset.id = photo.id;
+        card.dataset.cover = photo.cover;
+        card.dataset.video = photo.video;
         card.innerHTML = `
-            <div class="photo-container" data-id="${photo.id}">
-                <img src="${photo.cover}"
-                     alt="${photo.title}"
-                     loading="lazy"
-                     onerror="this.style.display='none'">
-                <video src="${photo.video}"
-                       loop
-                       playsinline
-                       preload="metadata"
-                       onerror="this.style.display='none'">
-                </video>
-                <div class="indicator">
+            <div class="photo-container">
+                <img src="${photo.cover}" alt="${photo.title}" loading="lazy" onerror="this.style.display='none'">
+                <video src="${photo.video}" loop playsinline preload="metadata" onerror="this.style.display='none'"></video>
+                <div class="indicator" data-action="play">
                     <span class="dot"></span>
                     LIVE
                 </div>
                 <div class="card-info">
                     <div class="label">${photo.title}</div>
-                    <div class="hint">悬停播放 · Hover to play</div>
                 </div>
             </div>
         `;
@@ -368,138 +491,183 @@
         const rect = orbit.getBoundingClientRect();
         const cx = rect.width / 2;
         const cy = rect.height / 2;
-
         const radiusX = Math.min(cx, cy) * 0.55;
         const radiusY = Math.min(cx, cy) * 0.42;
-
         const rotations = [-3.2, 2.8, -1.6, 4.1, -2.4, 1.8, -3.8, 2.2];
         const radiusOffsets = [1.0, 0.88, 1.06, 0.92, 1.1, 0.95, 0.85, 1.02];
 
         cards.forEach((card, i) => {
             const idx = i % rotations.length;
-            const rot = rotations[idx];
-            const rOff = radiusOffsets[idx];
-
             const angle = (i / count) * Math.PI * 2 - Math.PI / 2;
-            const x = cx + Math.cos(angle) * radiusX * rOff;
-            const y = cy + Math.sin(angle) * radiusY * rOff;
-
+            const x = cx + Math.cos(angle) * radiusX * radiusOffsets[idx];
+            const y = cy + Math.sin(angle) * radiusY * radiusOffsets[idx];
             card.style.left = x + 'px';
             card.style.top = y + 'px';
-            card.style.setProperty('--rot', rot + 'deg');
+            card.style.setProperty('--rot', rotations[idx] + 'deg');
         });
     }
 
+    // 桌面端拖拽
     function makeDraggable(card) {
-        let isDragging = false;
-        let startX, startY, origLeft, origTop;
-        let dragMoved = false;
+        if (isTouchDevice) return;
+        
+        let isDragging = false, startX, startY, origLeft, origTop;
 
-        function onPointerDown(e) {
+        card.addEventListener('mousedown', (e) => {
             isDragging = true;
-            dragMoved = false;
-            const point = e.touches ? e.touches[0] : e;
-            startX = point.clientX;
-            startY = point.clientY;
+            startX = e.clientX;
+            startY = e.clientY;
             origLeft = parseFloat(card.style.left) || 0;
             origTop = parseFloat(card.style.top) || 0;
-
             card.classList.add('dragging');
-        }
+        });
 
-        function onPointerMove(e) {
+        document.addEventListener('mousemove', (e) => {
             if (!isDragging) return;
-            const point = e.touches ? e.touches[0] : e;
-            const dx = point.clientX - startX;
-            const dy = point.clientY - startY;
+            card.style.left = (origLeft + e.clientX - startX) + 'px';
+            card.style.top = (origTop + e.clientY - startY) + 'px';
+        });
 
-            if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-                dragMoved = true;
-            }
-
-            card.style.left = (origLeft + dx) + 'px';
-            card.style.top = (origTop + dy) + 'px';
-        }
-
-        function onPointerUp() {
+        document.addEventListener('mouseup', () => {
             if (!isDragging) return;
             isDragging = false;
             card.classList.remove('dragging');
-        }
-
-        card.addEventListener('mousedown', onPointerDown);
-        document.addEventListener('mousemove', onPointerMove);
-        document.addEventListener('mouseup', onPointerUp);
-
-        card.addEventListener('touchstart', onPointerDown, { passive: true });
-        document.addEventListener('touchmove', onPointerMove, { passive: true });
-        document.addEventListener('touchend', onPointerUp);
-    }
-
-    function bindInteractions() {
-        document.querySelectorAll('.photo-container').forEach(container => {
-            const video = container.querySelector('video');
-            if (!video) return;
-
-            let playTimer = null;
-            container._playTimer = null;
-
-            container.addEventListener('mouseenter', () => {
-                const card = container.closest('.motion-card');
-                if (card?.classList.contains('dragging')) return;
-                playTimer = setTimeout(() => {
-                    container.classList.add('playing');
-                    video.currentTime = 0;
-                    video.play().catch(() => {});
-                }, 200);
-                container._playTimer = playTimer;
-            });
-
-            container.addEventListener('mouseleave', () => {
-                clearTimeout(playTimer);
-                container._playTimer = null;
-                container.classList.remove('playing');
-                video.pause();
-            });
-
-            container.addEventListener('touchstart', () => {
-                const card = container.closest('.motion-card');
-                if (card?.classList.contains('dragging')) return;
-                playTimer = setTimeout(() => {
-                    container.classList.add('playing');
-                    video.currentTime = 0;
-                    video.play().catch(() => {});
-                }, 300);
-                container._playTimer = playTimer;
-            });
-
-            container.addEventListener('touchend', () => {
-                clearTimeout(playTimer);
-                container._playTimer = null;
-                container.classList.remove('playing');
-                video.pause();
-            });
-
-            container.addEventListener('touchcancel', () => {
-                clearTimeout(playTimer);
-                container._playTimer = null;
-                container.classList.remove('playing');
-                video.pause();
-            });
-
-            video.addEventListener('ended', () => {
-                container.classList.remove('playing');
-            });
         });
     }
 
-    let resizeTimer = null;
+    // 桌面端悬停播放
+    function bindHoverPlay(card) {
+        if (isTouchDevice) return;
+        
+        const container = card.querySelector('.photo-container');
+        const video = container.querySelector('video');
+        if (!video) return;
 
-    function handleResize(orbit) {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => {
-            arrangeInOrbit(orbit);
-        }, 200);
+        card.addEventListener('mouseenter', () => {
+            if (card.classList.contains('dragging')) return;
+            container.classList.add('playing');
+            video.currentTime = 0;
+            video.play().catch(() => {});
+        });
+
+        card.addEventListener('mouseleave', () => {
+            container.classList.remove('playing');
+            video.pause();
+        });
+    }
+
+    // 移动端 Lightbox
+    function openLightbox(coverSrc, videoSrc) {
+        const lightbox = document.getElementById('lightbox');
+        const img = document.getElementById('lightboxImg');
+        const video = document.getElementById('lightboxVideo');
+        const indicator = document.getElementById('lightboxIndicator');
+        const media = document.getElementById('lightboxMedia');
+
+        img.src = coverSrc;
+        video.src = videoSrc;
+        currentLightboxVideo = video;
+        
+        media.classList.remove('playing');
+        indicator.classList.remove('playing');
+        
+        lightbox.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox() {
+        const lightbox = document.getElementById('lightbox');
+        const video = document.getElementById('lightboxVideo');
+        const media = document.getElementById('lightboxMedia');
+        const indicator = document.getElementById('lightboxIndicator');
+
+        video.pause();
+        media.classList.remove('playing');
+        indicator.classList.remove('playing');
+        lightbox.classList.remove('active');
+        document.body.style.overflow = '';
+        currentLightboxVideo = null;
+    }
+
+    function toggleLightboxPlay() {
+        const video = document.getElementById('lightboxVideo');
+        const media = document.getElementById('lightboxMedia');
+        const indicator = document.getElementById('lightboxIndicator');
+
+        if (media.classList.contains('playing')) {
+            video.pause();
+            media.classList.remove('playing');
+            indicator.classList.remove('playing');
+        } else {
+            video.currentTime = 0;
+            video.play().catch(() => {});
+            media.classList.add('playing');
+            indicator.classList.add('playing');
+        }
+    }
+
+    // 移动端长按播放
+    function bindTouchInteractions(card) {
+        if (!isTouchDevice) return;
+
+        const cover = card.dataset.cover;
+        const videoSrc = card.dataset.video;
+        let longPressTimer = null;
+        let isLongPress = false;
+
+        // 点击打开 Lightbox
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('.indicator')) return;
+            openLightbox(cover, videoSrc);
+        });
+
+        // 卡片上的 LIVE 按钮
+        const indicator = card.querySelector('.indicator');
+        indicator.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openLightbox(cover, videoSrc);
+            setTimeout(toggleLightboxPlay, 300);
+        });
+    }
+
+    // Lightbox 内交互
+    function initLightbox() {
+        const lightbox = document.getElementById('lightbox');
+        const closeBtn = document.getElementById('lightboxClose');
+        const media = document.getElementById('lightboxMedia');
+        const indicator = document.getElementById('lightboxIndicator');
+        let longPressTimer = null;
+        let isLongPress = false;
+
+        closeBtn.addEventListener('click', closeLightbox);
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox || e.target.closest('.lightbox-content')) {
+                closeLightbox();
+            }
+        });
+
+        // 点击 LIVE 播放/暂停
+        indicator.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleLightboxPlay();
+        });
+
+        // 长按播放
+        media.addEventListener('touchstart', (e) => {
+            isLongPress = false;
+            longPressTimer = setTimeout(() => {
+                isLongPress = true;
+                toggleLightboxPlay();
+            }, 400);
+        }, { passive: true });
+
+        media.addEventListener('touchend', () => {
+            clearTimeout(longPressTimer);
+        });
+
+        media.addEventListener('touchmove', () => {
+            clearTimeout(longPressTimer);
+        });
     }
 
     async function loadPhotos() {
@@ -511,7 +679,7 @@
             const photos = await response.json();
 
             if (photos.length === 0) {
-                orbit.innerHTML = '<p style="text-align:center;color:#666;padding:60px 0;width:100%;">暂无照片，请先运行 extract.js 提取</p>';
+                orbit.innerHTML = '<p style="text-align:center;color:#666;padding:60px 0;width:100%;">暂无照片</p>';
                 return;
             }
 
@@ -519,22 +687,18 @@
                 const card = createMotionCard(photo);
                 orbit.appendChild(card);
                 makeDraggable(card);
+                bindHoverPlay(card);
+                bindTouchInteractions(card);
             });
 
-            requestAnimationFrame(() => {
-                arrangeInOrbit(orbit);
-                bindInteractions();
-            });
+            requestAnimationFrame(() => arrangeInOrbit(orbit));
+            initLightbox();
 
-            window.addEventListener('resize', () => handleResize(orbit));
+            window.addEventListener('resize', () => {
+                if (!isTouchDevice) arrangeInOrbit(orbit);
+            });
         } catch (e) {
-            orbit.innerHTML = `
-                <div style="text-align:center;padding:60px 0;color:#666;width:100%;">
-                    <p style="font-size:1.1rem;margin-bottom:8px;">暂无照片数据</p>
-                    <p style="font-size:0.85rem;color:#555;">请先将小米动态照片放入 images/ 文件夹，然后运行:</p>
-                    <code style="display:inline-block;margin-top:12px;padding:8px 16px;background:#1a1a1a;border-radius:8px;font-size:0.85rem;color:#aaa;">node extract.js</code>
-                </div>
-            `;
+            orbit.innerHTML = '<p style="text-align:center;color:#666;padding:60px 0;">加载失败</p>';
         }
     }
 
