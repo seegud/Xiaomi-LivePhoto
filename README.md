@@ -171,6 +171,40 @@ live-photo/
 
 ---
 
+## Compatibility / 兼容性
+
+### Android Motion Photo Formats / 安卓实况图格式支持
+
+This script is specifically designed for **Xiaomi Motion Photos**. Different manufacturers use different implementations:
+
+本脚本专门针对 **小米动态照片格式** 设计。不同厂商的实现方式各异：
+
+| Manufacturer / 厂商 | Format / 格式 | Compatibility / 兼容性 | Notes / 说明 |
+|---------------------|---------------|------------------------|--------------|
+| **Xiaomi / 小米** | JPEG + MP4 concatenated / 直接拼接 | ✅ Fully supported / 完美支持 | Main target format / 主要目标格式 |
+| **OPPO / OnePlus / realme** | JPEG + MP4 (similar to Xiaomi) / 类似小米 | ⚠️ Likely compatible / 可能兼容 | Structure similar to Xiaomi, needs testing / 结构与小米类似，需测试验证 |
+| **vivo / iQOO** | Proprietary (HEIF/HEIC container) / 私有格式 | ❌ Not compatible / 不兼容 | Uses HEIF container, different structure / 使用 HEIF 容器，结构不同 |
+| **Huawei / 华为** | Dynamic photo format / 动态照片格式 | ❌ Not compatible / 不兼容 | Different implementation / 实现方式不同 |
+| **Samsung / 三星** | Motion Photo (separate or different container) / 独立文件或不同容器 | ❌ Not compatible / 不兼容 | May use separate files or different container / 可能使用独立文件或不同容器 |
+| **Google Pixel** | Motion Photo (JPEG + micro-video) / JPEG + 微视频 | ⚠️ Similar but different / 类似但不同 | Similar concept but structure may vary / 概念类似但结构可能有差异 |
+
+### Extending Support / 扩展支持
+
+To support other brands, the file structure of each format needs to be analyzed:
+
+要支持其他品牌，需要针对每种格式的文件结构进行分析：
+
+- **JPEG APP segments** — Some brands hide video data in JPEG's APP markers (EXIF extensions) / 有些品牌将视频藏在 JPEG 的 APP 段（EXIF 扩展）
+- **HEIF/HEIC containers** — Modern formats use HEIF containers with multiple items / 现代格式使用 HEIF 容器封装多个项目
+- **Separate files** — Some implementations store video as a separate file / 有些实现将视频存储为独立文件
+- **Different concatenation** — Video may be prepended instead of appended / 视频可能前置而非追加
+
+**Contributions welcome!** If you have motion photo samples from other brands and want to extend support, please open an issue.
+
+**欢迎贡献！** 如果你有其他品牌的实况图样本并希望扩展支持，请提交 Issue。
+
+---
+
 ## License / 许可
 
 MIT
