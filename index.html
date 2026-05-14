@@ -91,7 +91,6 @@
         transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
                     box-shadow 0.3s ease,
                     border-color 0.3s ease;
-        touch-action: none;
     }
 
     .motion-card:nth-child(1) { animation-delay: 0.05s; }
@@ -543,14 +542,15 @@
         const video = container.querySelector('video');
         if (!video) return;
 
-        card.addEventListener('mouseenter', () => {
+        // 绑定到 photo-container 而不是 card，更精确
+        container.addEventListener('mouseenter', () => {
             if (card.classList.contains('dragging')) return;
             container.classList.add('playing');
             video.currentTime = 0;
             video.play().catch(() => {});
         });
 
-        card.addEventListener('mouseleave', () => {
+        container.addEventListener('mouseleave', () => {
             container.classList.remove('playing');
             video.pause();
         });
